@@ -166,7 +166,7 @@ namespace PushSharp.Core
 
         private bool TaskStarted = false;
         private bool ShouldCancel = false;
-        const int MAX_MESSAGE_ONCE = 10;
+        const int MAX_MESSAGE_ONCE = 30;
 
 
         public void Start ()
