@@ -7,7 +7,7 @@ namespace PushSharp.Core
         event NotificationSuccessDelegate<TNotification> OnNotificationSucceeded;
         event NotificationFailureDelegate<TNotification> OnNotificationFailed;
 
-        System.Collections.Generic.IEnumerable<TNotification> TakeMany ();
+        TNotification TakeNotification ();
         bool IsCompleted { get; }
 
         void RaiseNotificationSucceeded (TNotification notification);

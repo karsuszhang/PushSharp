@@ -24,7 +24,7 @@ namespace PushSharp.Core
             workers = new List<ServiceWorker<TNotification>> ();
             running = false;
 
-            notifications = new BlockingCollection<TNotification> ();
+            notifications = new ConcurrentQueue<TNotification> ();
             ScaleSize = 1;
             //AutoScale = true;
             //AutoScaleMaxSize = 20;
@@ -39,23 +39,29 @@ namespace PushSharp.Core
 
         public IServiceConnectionFactory<TNotification> ServiceConnectionFactory { get; set; }
 
-        BlockingCollection<TNotification> notifications;
+        ConcurrentQueue<TNotification> notifications;
         List<ServiceWorker<TNotification>> workers;
         object lockWorkers;
         bool running;
 
         public virtual void QueueNotification (TNotification notification)
         {
-            notifications.Add (notification);
+            notifications.Enqueue (notification);
         }
 
-        public IEnumerable<TNotification> TakeMany ()
+        public TNotification TakeNotification ()
         {
-            return notifications.GetConsumingEnumerable ();
+            TNotification tn = default(TNotification);
+            if(notifications.TryDequeue(out tn) && tn != null)
+            {
+                return tn;
+            }
+
+            return default(TNotification);
         }
 
         public bool IsCompleted {
-            get { return notifications.IsCompleted; }
+            get { return notifications.Count <= 0; }
         }
 
         public void Start ()
@@ -70,15 +76,15 @@ namespace PushSharp.Core
         public void Stop (bool immediately = false)
         {
             if (!running)
-                throw new OperationCanceledException ("ServiceBroker has already been signaled to Stop");
+                return;
 
             running = false;
 
-            notifications.CompleteAdding ();
+            //notifications.CompleteAdding ();
 
             lock (lockWorkers) {
                 // Kill all workers right away
-                if (immediately)
+                //if (immediately)
                     workers.ForEach (sw => sw.Cancel ());
 					
                 var all = (from sw in workers
@@ -156,34 +162,51 @@ namespace PushSharp.Core
 
         public Task WorkerTask { get; private set; }
 
+        private bool TaskStarted = false;
+        private bool ShouldCancel = false;
+
         public void Start ()
         {
             WorkerTask = Task.Factory.StartNew (async delegate {
-                while (!CancelTokenSource.IsCancellationRequested && !Broker.IsCompleted) {
+                TaskStarted = true;
+                if(ShouldCancel)
+                {
+                    CancelTokenSource.Cancel();
+                }
+
+                while (!CancelTokenSource.IsCancellationRequested || !Broker.IsCompleted) {
 
                     try {
                        
                         var toSend = new List<Task> ();
-                        foreach (var n in Broker.TakeMany ()) {
-                            var t = Connection.Send (n);
+                        while(!Broker.IsCompleted)
+                        {
+                            var n = Broker.TakeNotification();
+                            if (n == null)
+                                break;
+
+                            var t = Connection.Send(n);
                             // Keep the continuation
-                            var cont = t.ContinueWith (ct => {
+                            var cont = t.ContinueWith(ct => {
                                 var cn = n;
                                 var ex = t.Exception;
 
                                 if (ex == null)
-                                    Broker.RaiseNotificationSucceeded (cn);
+                                    Broker.RaiseNotificationSucceeded(cn);
                                 else
-                                    Broker.RaiseNotificationFailed (cn, ex);                                
+                                    Broker.RaiseNotificationFailed(cn, ex);
                             });
 
                             // Let's wait for the continuation not the task itself
-                            toSend.Add (cont);
+                            toSend.Add(cont);
                         }
 
                         if (toSend.Count <= 0)
+                        {
+                            await Task.Delay(100);
                             continue;
-                       
+                        }
+                                               
                         try {
                             Log.Info ("Waiting on all tasks {0}", toSend.Count ());
                             await Task.WhenAll (toSend).ConfigureAwait (false);
@@ -216,7 +239,10 @@ namespace PushSharp.Core
 
         public void Cancel ()
         {
-            CancelTokenSource.Cancel ();
+            if (TaskStarted)
+                CancelTokenSource.Cancel();
+            else
+                ShouldCancel = true;
         }
     }
 }

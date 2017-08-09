@@ -39,6 +39,8 @@ namespace PushSharp.Apple
 
         public JObject Payload { get; set; }
 
+        public object UserData { get; set; }
+
         /// <summary>
         /// The expiration date after which Apple will no longer store and forward this push notification.
         /// If no value is provided, an assumed value of one year from now is used.  If you do not wish
