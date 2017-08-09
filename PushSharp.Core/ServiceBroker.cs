@@ -44,6 +44,8 @@ namespace PushSharp.Core
         object lockWorkers;
         bool running;
 
+        const int TASK_CANCEL_TIME = 8000;
+
         public virtual void QueueNotification (TNotification notification)
         {
             notifications.Enqueue (notification);
@@ -92,7 +94,7 @@ namespace PushSharp.Core
 
                 Log.Info ("Stopping: Waiting on Tasks");
 
-                Task.WaitAll (all);
+                Task.WaitAll (all, TASK_CANCEL_TIME);
 
                 Log.Info ("Stopping: Done Waiting on Tasks");
 
@@ -164,6 +166,8 @@ namespace PushSharp.Core
 
         private bool TaskStarted = false;
         private bool ShouldCancel = false;
+        const int MAX_MESSAGE_ONCE = 10;
+
 
         public void Start ()
         {
@@ -179,7 +183,7 @@ namespace PushSharp.Core
                     try {
                        
                         var toSend = new List<Task> ();
-                        while(!Broker.IsCompleted)
+                        while(!Broker.IsCompleted && toSend.Count <= MAX_MESSAGE_ONCE)
                         {
                             var n = Broker.TakeNotification();
                             if (n == null)
@@ -237,12 +241,17 @@ namespace PushSharp.Core
             }, TaskContinuationOptions.OnlyOnFaulted);              
         }
 
-        public void Cancel ()
+        public void Cancel (bool force = false)
         {
-            if (TaskStarted)
+            if (force)
                 CancelTokenSource.Cancel();
             else
-                ShouldCancel = true;
+            {
+                if (TaskStarted)
+                    CancelTokenSource.Cancel();
+                else
+                    ShouldCancel = true;
+            }         
         }
     }
 }
