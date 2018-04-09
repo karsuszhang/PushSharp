@@ -50,6 +50,11 @@ namespace PushSharp.Amazon
             http.DefaultRequestHeaders.Remove("connection");
         }
 
+        public void Stop()
+        {
+
+        }
+
         public AdmConfiguration Configuration { get; private set; }
 
         public DateTime Expires { get; set; }

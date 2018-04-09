@@ -251,7 +251,10 @@ namespace PushSharp.Core
                     CancelTokenSource.Cancel();
                 else
                     ShouldCancel = true;
-            }         
+            }
+
+            if (Connection != null)
+                Connection.Stop();
         }
     }
 }

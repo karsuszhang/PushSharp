@@ -39,6 +39,11 @@ namespace PushSharp.Blackberry
 
         public BlackberryConfiguration Configuration { get; private set; }
 
+        public void Stop()
+        {
+
+        }
+
         readonly BlackberryHttpClient http;
 
         public async Task Send (BlackberryNotification notification)

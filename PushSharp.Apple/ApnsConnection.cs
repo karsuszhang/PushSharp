@@ -314,6 +314,12 @@ namespace PushSharp.Apple
             return p;
         }
 
+        public void Stop()
+        {
+            if(client != null)
+                disconnect();
+        }
+
         async Task connect ()
         {            
             if (client != null)

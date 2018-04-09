@@ -46,5 +46,10 @@ namespace PushSharp.Firefox
                 throw new FirefoxNotificationException (notification, "HTTP Status: " + result.StatusCode);
             }
         }
+
+        public void Stop()
+        {
+
+        }
     }
 }

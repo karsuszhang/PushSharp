@@ -34,6 +34,12 @@ namespace PushSharp.Apple
         {
             connection = new ApnsConnection (configuration);
         }
+
+        public void Stop()
+        {
+            if (connection != null)
+                connection.Stop();
+        }
         
         public async Task Send (ApnsNotification notification)
         {

@@ -47,6 +47,11 @@ namespace PushSharp.Google
 
         public GcmConfiguration Configuration { get; private set; }
 
+        public void Stop()
+        {
+
+        }
+
         readonly HttpClient http;
 
         public async Task Send (GcmNotification notification)

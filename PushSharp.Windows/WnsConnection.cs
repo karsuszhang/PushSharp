@@ -49,6 +49,11 @@ namespace PushSharp.Windows
         public WnsAccessTokenManager AccessTokenManager { get; private set; }
         public WnsConfiguration Configuration { get; private set; }
 
+        public void Stop()
+        {
+
+        }
+
         public async Task Send (WnsNotification notification)
         {           
             // Get or renew our access token

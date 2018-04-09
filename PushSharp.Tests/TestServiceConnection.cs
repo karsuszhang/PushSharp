@@ -50,7 +50,12 @@ namespace PushSharp.Tests
     }
 
     public class TestServiceConnection : IServiceConnection<TestNotification>
-	{		
+	{
+
+        public void Stop()
+        {
+
+        }
         public async Task Send (TestNotification notification)
 		{         
             var id = notification.TestId;

@@ -9,6 +9,8 @@ namespace PushSharp.Core
     public interface IServiceConnection<TNotification> where TNotification : INotification
     {
         Task Send (TNotification notification);
+
+        void Stop();
     }
 }
 
